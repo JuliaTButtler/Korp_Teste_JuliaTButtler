@@ -67,5 +67,38 @@ public class ProdutoController : ControllerBase
             });
         }
     }
+
+    [HttpPost("{id:int}/baixa")]
+    public async Task<IActionResult> BaixarEstoque(int id, BaixarEstoqueRequest request)
+    {
+        try
+        {
+            var produto = await _service.BaixarEstoqueAsync(id, request);
+
+            if (produto == null)
+            {
+                return NotFound(new
+                {
+                    mensagem = "Produto não encontrado."
+                });
+            }
+
+            return Ok(produto);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                mensagem = ex.Message
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                mensagem = ex.Message
+            });
+        }
+    }
 }
 

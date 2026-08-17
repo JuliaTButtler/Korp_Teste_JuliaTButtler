@@ -74,4 +74,35 @@ public class ProdutoService
 
         return produto;
     }
+
+    public async Task<Produto?> BaixarEstoqueAsync(int id, BaixarEstoqueRequest request)
+    {
+        if (request.Quantidade <= 0)
+        {
+            throw new ArgumentException(
+                "A quantidade da baixa deve ser maior que zero."
+            );
+        }
+
+        var produto = await _context.Produtos
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (produto == null)
+        {
+            return null;
+        }
+
+        if (produto.Saldo < request.Quantidade)
+        {
+            throw new InvalidOperationException(
+                "Saldo insuficiente para realizar a baixa."
+            );
+        }
+
+        produto.Saldo -= request.Quantidade;
+
+        await _context.SaveChangesAsync();
+
+        return produto;
+    }
 }
