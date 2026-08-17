@@ -59,5 +59,13 @@ public class ProdutoController : ControllerBase
                 mensagem = ex.Message
             });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                mensagem = ex.Message
+            });
+        }
     }
 }
+

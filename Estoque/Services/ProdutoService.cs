@@ -30,6 +30,27 @@ public class ProdutoService
 
     public async Task<Produto> CriarAsync(CriarProdutoRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Codigo))
+        {
+            throw new ArgumentException(
+                "O código do produto é obrigatório."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Descricao))
+        {
+            throw new ArgumentException(
+                "A descrição do produto é obrigatória."
+            );
+        }
+
+        if (request.Saldo < 0)
+        {
+            throw new ArgumentException(
+                "O saldo do produto não pode ser negativo."
+            );
+        }
+
         var produtoExistente = await _context.Produtos
             .FirstOrDefaultAsync(p => p.Codigo == request.Codigo);
 
