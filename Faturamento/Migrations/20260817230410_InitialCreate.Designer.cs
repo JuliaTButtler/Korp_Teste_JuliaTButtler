@@ -12,7 +12,7 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Faturamento.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260817223214_InitialCreate")]
+    [Migration("20260817230410_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

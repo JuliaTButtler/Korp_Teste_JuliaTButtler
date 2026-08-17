@@ -1,15 +1,35 @@
 using Faturamento.Data;
+using Faturamento.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseOracle(
         builder.Configuration.GetConnectionString("OracleConnection")
     )
 );
+
+builder.Services.AddHttpClient<EstoqueClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["EstoqueApi:BaseUrl"]
+            ?? throw new InvalidOperationException(
+                "A URL do microsserviço de estoque não foi configurada."
+            )
+    );
+});
+
+builder.Services.AddScoped<NotaFiscalService>();
 
 builder.Services.AddAuthorization();
 

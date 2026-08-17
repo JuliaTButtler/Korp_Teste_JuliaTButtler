@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Faturamento.Models;
 
 public class ItemNotaFiscal
@@ -10,5 +12,6 @@ public class ItemNotaFiscal
 
     public int Quantidade { get; set; }
 
+    [JsonIgnore]
     public NotaFiscal NotaFiscal { get; set; } = null!;
 }
