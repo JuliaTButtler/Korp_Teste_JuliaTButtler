@@ -1,0 +1,27 @@
+.pagina-inicial {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.pagina-inicial h1 {
+  margin-bottom: 10px;
+}
+
+.pagina-inicial p {
+  margin-bottom: 30px;
+}
+
+.opcoes {
+  display: flex;
+  gap: 20px;
+}
+
+.opcoes button {
+  padding: 15px 30px;
+  font-size: 16px;
+  cursor: pointer;
+}
