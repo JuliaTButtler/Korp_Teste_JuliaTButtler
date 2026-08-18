@@ -1,0 +1,86 @@
+<section class="pagina">
+  <div class="pagina-cabecalho">
+    <div>
+      <h1>Nova Nota Fiscal</h1>
+      <p class="subtitulo">Adicione os itens antes de criar a nota</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Adicionar item</h2>
+
+    @if (produtos().length === 0) {
+      <p class="vazio">Cadastre um produto antes de emitir uma nota.</p>
+    } @else {
+      <form class="formulario formulario-item" (ngSubmit)="adicionarItem()">
+        <div class="campo">
+          <label for="produto">Produto</label>
+          <select id="produto" name="produto" [(ngModel)]="produtoId">
+            <option [ngValue]="null">Selecione um produto</option>
+            @for (produto of produtos(); track produto.id) {
+              <option [ngValue]="produto.id">{{ rotuloProduto(produto) }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="quantidade">Quantidade</label>
+          <input id="quantidade" name="quantidade" type="number" min="1" [(ngModel)]="quantidade" />
+          @if (produtoSelecionado(); as produto) {
+            <span class="dica">Saldo disponível: {{ produto.saldo }}</span>
+          }
+        </div>
+
+        <div class="acoes">
+          <button class="btn btn-secundario" type="submit">Adicionar item</button>
+        </div>
+      </form>
+    }
+
+    @if (erro) {
+      <p class="alerta alerta-erro">{{ erro }}</p>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Itens</h2>
+
+    @if (itens.length === 0) {
+      <p class="vazio">Nenhum item adicionado.</p>
+    } @else {
+      <div class="tabela-wrapper">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descrição</th>
+              <th>Quantidade</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of itens; track item.produtoId) {
+              <tr>
+                <td>{{ item.codigo }}</td>
+                <td>{{ item.descricao }}</td>
+                <td>{{ item.quantidade }}</td>
+                <td class="direita">
+                  <button class="btn btn-perigo btn-pequeno" type="button" (click)="removerItem(item.produtoId)">
+                    Remover
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <div class="acoes entre rodape-acoes">
+    <a routerLink="/notas" class="btn btn-secundario">Voltar</a>
+    <button class="btn btn-primario" type="button" [disabled]="itens.length === 0" (click)="criarNota()">
+      Criar Nota
+    </button>
+  </div>
+</section>

@@ -1,0 +1,45 @@
+<section class="pagina">
+  <div class="pagina-cabecalho">
+    <div>
+      <h1>Notas Fiscais</h1>
+      <p class="subtitulo">Acompanhe as notas abertas e fechadas</p>
+    </div>
+
+    <a routerLink="/notas/nova" class="btn btn-primario">Nova Nota</a>
+  </div>
+
+  <section class="card">
+    @if (notas().length === 0) {
+      <p class="vazio">Nenhuma nota fiscal cadastrada.</p>
+    } @else {
+      <div class="tabela-wrapper">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (nota of notas(); track nota.id) {
+              <tr>
+                <td>{{ formatarNumeroNota(nota.numero) }}</td>
+                <td>{{ nota.dataCriacao | date: 'dd/MM/yyyy' }}</td>
+                <td>
+                  <span class="badge" [class.badge-aberta]="nota.status === 'ABERTA'" [class.badge-fechada]="nota.status === 'FECHADA'">
+                    {{ nota.status }}
+                  </span>
+                </td>
+                <td>
+                  <a [routerLink]="['/notas', nota.id]" class="btn btn-secundario btn-pequeno">Visualizar</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

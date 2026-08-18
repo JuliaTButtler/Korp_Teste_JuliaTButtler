@@ -1,0 +1,63 @@
+<section class="pagina">
+  @if (nota(); as notaAtual) {
+    <div class="pagina-cabecalho">
+      <div>
+        <h1>Nota {{ formatarNumeroNota(notaAtual.numero) }}</h1>
+        <p class="subtitulo">Data: {{ notaAtual.dataCriacao | date: 'dd/MM/yyyy' }}</p>
+      </div>
+
+      <span class="badge" [class.badge-aberta]="notaAtual.status === 'ABERTA'" [class.badge-fechada]="notaAtual.status === 'FECHADA'">
+        {{ notaAtual.status }}
+      </span>
+    </div>
+
+    <section class="card">
+      <h2>Itens</h2>
+
+      @if (itens().length === 0) {
+        <p class="vazio">Esta nota não possui itens.</p>
+      } @else {
+        <div class="tabela-wrapper">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descrição</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of itens(); track item.produtoId) {
+                <tr>
+                  <td>{{ item.codigo }}</td>
+                  <td>{{ item.descricao }}</td>
+                  <td>{{ item.quantidade }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    @if (erro) {
+      <p class="alerta alerta-erro">{{ erro }}</p>
+    }
+
+    <div class="acoes entre rodape-acoes">
+      <a routerLink="/notas" class="btn btn-secundario">Voltar</a>
+
+      @if (notaAtual.status === 'ABERTA') {
+        <button class="btn btn-primario" type="button" (click)="imprimir()">Imprimir</button>
+      }
+    </div>
+  } @else {
+    <section class="card">
+      <h1>Nota não encontrada</h1>
+      <p class="subtitulo">Essa nota não existe ou foi removida.</p>
+      <div class="acoes rodape-acoes">
+        <a routerLink="/notas" class="btn btn-secundario">Voltar</a>
+      </div>
+    </section>
+  }
+</section>

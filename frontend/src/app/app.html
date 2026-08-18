@@ -1,15 +1,13 @@
-<div class="pagina-inicial">
-  <h1> Sistema de Notas Fiscais</h1>
+<header class="topo">
+  <a routerLink="/" class="marca">Sistema de Notas Fiscais</a>
 
-  <p>O que você deseja acessar?</p>
+  <nav class="menu">
+    <a routerLink="/" routerLinkActive="ativo" [routerLinkActiveOptions]="{ exact: true }">Início</a>
+    <a routerLink="/produtos" routerLinkActive="ativo">Produtos</a>
+    <a routerLink="/notas" routerLinkActive="ativo">Notas Fiscais</a>
+  </nav>
+</header>
 
-  <div class="opcoes">
-    <button>
-       Produtos
-    </button>
-
-    <button>
-       Notas Fiscais
-    </button>
-  </div>
-</div>
+<main class="conteudo">
+  <router-outlet />
+</main>

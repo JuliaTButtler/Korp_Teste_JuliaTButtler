@@ -1,0 +1,18 @@
+.formulario-item {
+  grid-template-columns: 1fr 180px auto;
+  align-items: end;
+}
+
+.alerta {
+  margin-top: 16px;
+}
+
+.rodape-acoes {
+  margin-top: 16px;
+}
+
+@media (max-width: 720px) {
+  .formulario-item {
+    grid-template-columns: 1fr;
+  }
+}

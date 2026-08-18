@@ -1,0 +1,70 @@
+<section class="pagina">
+  <div class="pagina-cabecalho">
+    <div>
+      <h1>Produtos</h1>
+      <p class="subtitulo">Cadastre um item e acompanhe o saldo em estoque</p>
+    </div>
+  </div>
+
+  <section class="card">
+    <h2>Novo produto</h2>
+
+    <form class="formulario formulario-produto" (ngSubmit)="cadastrar()">
+      <div class="campo">
+        <label for="codigo">Código</label>
+        <input id="codigo" name="codigo" [(ngModel)]="codigo" autocomplete="off" />
+      </div>
+
+      <div class="campo">
+        <label for="descricao">Descrição</label>
+        <input id="descricao" name="descricao" [(ngModel)]="descricao" autocomplete="off" />
+      </div>
+
+      <div class="campo">
+        <label for="saldo">Saldo</label>
+        <input id="saldo" name="saldo" type="number" min="0" [(ngModel)]="saldo" />
+      </div>
+
+      <div class="acoes">
+        <button class="btn btn-primario" type="submit">Cadastrar produto</button>
+      </div>
+    </form>
+
+    @if (erro) {
+      <p class="alerta alerta-erro">{{ erro }}</p>
+    }
+
+    @if (sucesso) {
+      <p class="alerta alerta-sucesso">{{ sucesso }}</p>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Produtos cadastrados</h2>
+
+    @if (produtos().length === 0) {
+      <p class="vazio">Nenhum produto cadastrado.</p>
+    } @else {
+      <div class="tabela-wrapper">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descrição</th>
+              <th>Saldo</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (produto of produtos(); track produto.id) {
+              <tr>
+                <td>{{ produto.codigo }}</td>
+                <td>{{ produto.descricao }}</td>
+                <td>{{ produto.saldo }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

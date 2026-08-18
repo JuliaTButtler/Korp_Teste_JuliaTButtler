@@ -1,1 +1,248 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --cor-fundo: #eef1f6;
+  --cor-superficie: #ffffff;
+  --cor-primaria: #1e3a5f;
+  --cor-primaria-hover: #16304d;
+  --cor-texto: #1f2933;
+  --cor-texto-suave: #5f6c7b;
+  --cor-borda: #d7dee8;
+  --cor-aberta: #0f7b3d;
+  --cor-aberta-bg: #e6f6ec;
+  --cor-fechada: #5f6c7b;
+  --cor-fechada-bg: #eef1f4;
+  --cor-erro: #b42318;
+  --cor-erro-bg: #fdecea;
+  --cor-sucesso: #0f7b3d;
+  --cor-sucesso-bg: #e6f6ec;
+  --sombra: 0 10px 28px rgba(30, 58, 95, 0.08);
+  --raio: 12px;
+  --fonte: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--fonte);
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+.pagina {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+.pagina-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.pagina-cabecalho h1 {
+  font-size: 1.6rem;
+}
+
+.subtitulo {
+  margin-top: 6px;
+  color: var(--cor-texto-suave);
+}
+
+.card {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  padding: 24px;
+}
+
+.card + .card {
+  margin-top: 16px;
+}
+
+.card h2 {
+  font-size: 1.05rem;
+  margin-bottom: 16px;
+}
+
+.formulario {
+  display: grid;
+  gap: 16px;
+}
+
+.campo {
+  display: grid;
+  gap: 6px;
+}
+
+.campo label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.campo input,
+.campo select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  font: inherit;
+  background: #fff;
+}
+
+.campo input:focus,
+.campo select:focus {
+  outline: 2px solid #8aa4c8;
+  border-color: var(--cor-primaria);
+}
+
+.dica {
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+}
+
+.acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.acoes.entre {
+  justify-content: space-between;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-primario {
+  background: var(--cor-primaria);
+  color: #fff;
+}
+
+.btn-primario:hover:not(:disabled) {
+  background: var(--cor-primaria-hover);
+}
+
+.btn-secundario {
+  background: #fff;
+  color: var(--cor-primaria);
+  border: 1px solid var(--cor-borda);
+}
+
+.btn-secundario:hover:not(:disabled) {
+  background: #f7f9fc;
+}
+
+.btn-perigo {
+  background: #fff;
+  color: var(--cor-erro);
+  border: 1px solid #f0c2bd;
+}
+
+.btn-perigo:hover:not(:disabled) {
+  background: var(--cor-erro-bg);
+}
+
+.btn-pequeno {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.alerta {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+}
+
+.alerta-erro {
+  background: var(--cor-erro-bg);
+  color: var(--cor-erro);
+}
+
+.alerta-sucesso {
+  background: var(--cor-sucesso-bg);
+  color: var(--cor-sucesso);
+}
+
+.tabela-wrapper {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela th,
+.tabela td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tabela th {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cor-texto-suave);
+}
+
+.tabela td.direita {
+  text-align: right;
+}
+
+.vazio {
+  color: var(--cor-texto-suave);
+  padding: 8px 0;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-aberta {
+  background: var(--cor-aberta-bg);
+  color: var(--cor-aberta);
+}
+
+.badge-fechada {
+  background: var(--cor-fechada-bg);
+  color: var(--cor-fechada);
+}
