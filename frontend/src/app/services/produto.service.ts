@@ -83,4 +83,27 @@ export class ProdutoService {
 
     return atualizado;
   }
+
+  entrarEstoque(id: number, quantidade: number): Produto {
+    if (quantidade <= 0) {
+      throw new Error('A quantidade da entrada deve ser maior que zero.');
+    }
+
+    const produto = this.buscarPorId(id);
+
+    if (!produto) {
+      throw new Error('Produto não encontrado.');
+    }
+
+    const atualizado: Produto = {
+      ...produto,
+      saldo: produto.saldo + quantidade,
+    };
+
+    this.produtos.update((lista) =>
+      lista.map((item) => (item.id === id ? atualizado : item))
+    );
+
+    return atualizado;
+  }
 }

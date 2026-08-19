@@ -105,4 +105,28 @@ public class ProdutoService
 
         return produto;
     }
+
+    public async Task<Produto?> EntrarEstoqueAsync(int id, EntradaEstoqueRequest request)
+    {
+        if (request.Quantidade <= 0)
+        {
+            throw new ArgumentException(
+                "A quantidade da entrada deve ser maior que zero."
+            );
+        }
+
+        var produto = await _context.Produtos
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (produto == null)
+        {
+            return null;
+        }
+
+        produto.Saldo += request.Quantidade;
+
+        await _context.SaveChangesAsync();
+
+        return produto;
+    }
 }

@@ -29,15 +29,15 @@
         <button class="btn btn-primario" type="submit">Cadastrar produto</button>
       </div>
     </form>
-
-    @if (erro) {
-      <p class="alerta alerta-erro">{{ erro }}</p>
-    }
-
-    @if (sucesso) {
-      <p class="alerta alerta-sucesso">{{ sucesso }}</p>
-    }
   </section>
+
+  @if (erro) {
+    <p class="alerta alerta-erro">{{ erro }}</p>
+  }
+
+  @if (sucesso) {
+    <p class="alerta alerta-sucesso">{{ sucesso }}</p>
+  }
 
   <section class="card">
     <h2>Produtos cadastrados</h2>
@@ -52,6 +52,7 @@
               <th>Código</th>
               <th>Descrição</th>
               <th>Saldo</th>
+              <th>Entrada</th>
             </tr>
           </thead>
           <tbody>
@@ -60,6 +61,18 @@
                 <td>{{ produto.codigo }}</td>
                 <td>{{ produto.descricao }}</td>
                 <td>{{ produto.saldo }}</td>
+                <td>
+                  <form class="entrada-estoque" (ngSubmit)="entrarEstoque(produto.id)">
+                    <input
+                      [id]="'entrada-' + produto.id"
+                      [name]="'entrada-' + produto.id"
+                      type="number"
+                      min="1"
+                      [(ngModel)]="quantidadesEntrada[produto.id]"
+                    />
+                    <button class="btn btn-secundario btn-pequeno" type="submit">Adicionar</button>
+                  </form>
+                </td>
               </tr>
             }
           </tbody>

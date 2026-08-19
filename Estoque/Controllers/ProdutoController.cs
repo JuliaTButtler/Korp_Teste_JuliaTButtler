@@ -100,5 +100,31 @@ public class ProdutoController : ControllerBase
             });
         }
     }
+
+    [HttpPost("{id:int}/entrada")]
+    public async Task<IActionResult> EntrarEstoque(int id, EntradaEstoqueRequest request)
+    {
+        try
+        {
+            var produto = await _service.EntrarEstoqueAsync(id, request);
+
+            if (produto == null)
+            {
+                return NotFound(new
+                {
+                    mensagem = "Produto não encontrado."
+                });
+            }
+
+            return Ok(produto);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                mensagem = ex.Message
+            });
+        }
+    }
 }
 

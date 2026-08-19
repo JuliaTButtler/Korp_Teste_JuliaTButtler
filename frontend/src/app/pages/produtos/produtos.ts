@@ -16,6 +16,7 @@ export class Produtos {
   codigo = '';
   descricao = '';
   saldo: number | null = null;
+  quantidadesEntrada: Record<number, number | null> = {};
   erro = '';
   sucesso = '';
 
@@ -35,6 +36,25 @@ export class Produtos {
       this.saldo = null;
     } catch (error) {
       this.erro = error instanceof Error ? error.message : 'Não foi possível cadastrar o produto.';
+    }
+  }
+
+  entrarEstoque(produtoId: number): void {
+    this.erro = '';
+    this.sucesso = '';
+
+    try {
+      const quantidade = this.quantidadesEntrada[produtoId];
+
+      if (quantidade === null || quantidade === undefined || !Number.isFinite(quantidade)) {
+        throw new Error('A quantidade da entrada é obrigatória.');
+      }
+
+      this.produtoService.entrarEstoque(produtoId, quantidade);
+      this.sucesso = 'Entrada de estoque registrada com sucesso.';
+      this.quantidadesEntrada[produtoId] = null;
+    } catch (error) {
+      this.erro = error instanceof Error ? error.message : 'Não foi possível registrar a entrada.';
     }
   }
 }

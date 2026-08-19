@@ -3,11 +3,25 @@
   align-items: end;
 }
 
+.entrada-estoque {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.entrada-estoque input {
+  width: 88px;
+}
+
 .formulario-produto .acoes {
   grid-column: 1 / -1;
 }
 
 .alerta {
+  margin: 16px 0 0;
+}
+
+.alerta + .card {
   margin-top: 16px;
 }
 
