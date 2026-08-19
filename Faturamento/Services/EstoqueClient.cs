@@ -24,7 +24,7 @@ public class EstoqueClient
                 return null;
             }
 
-            GarantirEstoqueDisponivel(response);
+            await GarantirEstoqueDisponivelAsync(response);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -105,28 +105,30 @@ public class EstoqueClient
                 return;
             }
 
-            GarantirEstoqueDisponivel(response);
+            var mensagem = await LerMensagemAsync(response);
+
+            await GarantirEstoqueDisponivelAsync(response, mensagem);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 throw new InvalidOperationException(
-                    $"Produto {produtoId} não encontrado no estoque."
+                    mensagem ?? $"Produto {produtoId} não encontrado no estoque."
                 );
             }
 
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
-                throw new InvalidOperationException(mensagemConflito);
+                throw new InvalidOperationException(mensagem ?? mensagemConflito);
             }
 
             if (response.StatusCode == HttpStatusCode.BadRequest)
             {
                 throw new ArgumentException(
-                    $"Quantidade inválida para o produto {produtoId}."
+                    mensagem ?? $"Quantidade inválida para o produto {produtoId}."
                 );
             }
 
-            throw new InvalidOperationException(mensagemGenerica);
+            throw new InvalidOperationException(mensagem ?? mensagemGenerica);
         }
         catch (Exception ex) when (EhFalhaDeComunicacao(ex))
         {
@@ -134,12 +136,47 @@ public class EstoqueClient
         }
     }
 
-    private static void GarantirEstoqueDisponivel(HttpResponseMessage response)
+    private static async Task GarantirEstoqueDisponivelAsync(
+        HttpResponseMessage response,
+        string? mensagem = null
+    )
     {
-        if ((int)response.StatusCode >= 500)
+        if ((int)response.StatusCode < 500)
         {
-            throw EstoqueIndisponivel();
+            return;
         }
+
+        mensagem ??= await LerMensagemAsync(response);
+
+        if (EhErroDeNegocio(mensagem))
+        {
+            throw new InvalidOperationException(mensagem);
+        }
+
+        throw EstoqueIndisponivel();
+    }
+
+    private static async Task<string?> LerMensagemAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var erro = await response.Content.ReadFromJsonAsync<MensagemErroResponse>();
+            return string.IsNullOrWhiteSpace(erro?.Mensagem) ? null : erro.Mensagem;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static bool EhErroDeNegocio(string? mensagem)
+    {
+        if (string.IsNullOrWhiteSpace(mensagem))
+        {
+            return false;
+        }
+
+        return mensagem.Contains("Saldo insuficiente", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool EhFalhaDeComunicacao(Exception ex)

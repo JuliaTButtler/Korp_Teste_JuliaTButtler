@@ -89,16 +89,26 @@ public class ProdutoService
     {
         ValidarQuantidade(request.Quantidade);
 
-        var afetados = await _context.Produtos
-            .Where(p =>
-                p.Id == id &&
-                p.Saldo >= p.Reservado + request.Quantidade)
-            .ExecuteUpdateAsync(p => p
-                .SetProperty(
-                    produto => produto.Reservado,
-                    produto => produto.Reservado + request.Quantidade
-                )
+        var produto = await BuscarPorIdAsync(id);
+
+        if (produto == null)
+        {
+            return null;
+        }
+
+        if (produto.Saldo - produto.Reservado < request.Quantidade)
+        {
+            throw new InvalidOperationException(
+                "Saldo insuficiente para reservar a quantidade."
             );
+        }
+
+        var afetados = await ExecutarSqlAsync(
+            $@"UPDATE ""PRODUTO""
+               SET ""RESERVADO"" = ""RESERVADO"" + {request.Quantidade}
+               WHERE ""ID"" = {id}
+                 AND ""SALDO"" - ""RESERVADO"" >= {request.Quantidade}"
+        );
 
         return await ResultadoMovimentoAsync(
             id,
@@ -111,16 +121,12 @@ public class ProdutoService
     {
         ValidarQuantidade(request.Quantidade);
 
-        var afetados = await _context.Produtos
-            .Where(p =>
-                p.Id == id &&
-                p.Reservado >= request.Quantidade)
-            .ExecuteUpdateAsync(p => p
-                .SetProperty(
-                    produto => produto.Reservado,
-                    produto => produto.Reservado - request.Quantidade
-                )
-            );
+        var afetados = await ExecutarSqlAsync(
+            $@"UPDATE ""PRODUTO""
+               SET ""RESERVADO"" = ""RESERVADO"" - {request.Quantidade}
+               WHERE ""ID"" = {id}
+                 AND ""RESERVADO"" >= {request.Quantidade}"
+        );
 
         return await ResultadoMovimentoAsync(
             id,
@@ -133,21 +139,14 @@ public class ProdutoService
     {
         ValidarQuantidade(request.Quantidade);
 
-        var afetados = await _context.Produtos
-            .Where(p =>
-                p.Id == id &&
-                p.Saldo >= request.Quantidade &&
-                p.Reservado >= request.Quantidade)
-            .ExecuteUpdateAsync(p => p
-                .SetProperty(
-                    produto => produto.Saldo,
-                    produto => produto.Saldo - request.Quantidade
-                )
-                .SetProperty(
-                    produto => produto.Reservado,
-                    produto => produto.Reservado - request.Quantidade
-                )
-            );
+        var afetados = await ExecutarSqlAsync(
+            $@"UPDATE ""PRODUTO""
+               SET ""SALDO"" = ""SALDO"" - {request.Quantidade},
+                   ""RESERVADO"" = ""RESERVADO"" - {request.Quantidade}
+               WHERE ""ID"" = {id}
+                 AND ""SALDO"" >= {request.Quantidade}
+                 AND ""RESERVADO"" >= {request.Quantidade}"
+        );
 
         return await ResultadoMovimentoAsync(
             id,
@@ -160,18 +159,12 @@ public class ProdutoService
     {
         ValidarQuantidade(request.Quantidade);
 
-        var afetados = await _context.Produtos
-            .Where(p => p.Id == id)
-            .ExecuteUpdateAsync(p => p
-                .SetProperty(
-                    produto => produto.Saldo,
-                    produto => produto.Saldo + request.Quantidade
-                )
-                .SetProperty(
-                    produto => produto.Reservado,
-                    produto => produto.Reservado + request.Quantidade
-                )
-            );
+        var afetados = await ExecutarSqlAsync(
+            $@"UPDATE ""PRODUTO""
+               SET ""SALDO"" = ""SALDO"" + {request.Quantidade},
+                   ""RESERVADO"" = ""RESERVADO"" + {request.Quantidade}
+               WHERE ""ID"" = {id}"
+        );
 
         if (afetados == 0)
         {
@@ -185,14 +178,11 @@ public class ProdutoService
     {
         ValidarQuantidade(request.Quantidade);
 
-        var afetados = await _context.Produtos
-            .Where(p => p.Id == id)
-            .ExecuteUpdateAsync(p => p
-                .SetProperty(
-                    produto => produto.Saldo,
-                    produto => produto.Saldo + request.Quantidade
-                )
-            );
+        var afetados = await ExecutarSqlAsync(
+            $@"UPDATE ""PRODUTO""
+               SET ""SALDO"" = ""SALDO"" + {request.Quantidade}
+               WHERE ""ID"" = {id}"
+        );
 
         if (afetados == 0)
         {
@@ -200,6 +190,18 @@ public class ProdutoService
         }
 
         return await BuscarPorIdAsync(id);
+    }
+
+    private async Task<int> ExecutarSqlAsync(FormattableString sql)
+    {
+        try
+        {
+            return await _context.Database.ExecuteSqlInterpolatedAsync(sql);
+        }
+        catch (Exception ex) when (EhViolacaoDeRegra(ex))
+        {
+            return 0;
+        }
     }
 
     private async Task<Produto?> ResultadoMovimentoAsync(
@@ -225,12 +227,20 @@ public class ProdutoService
         throw new InvalidOperationException(mensagemSaldo);
     }
 
+    private static bool EhViolacaoDeRegra(Exception ex)
+    {
+        var mensagem = ex.ToString();
+
+        return mensagem.Contains("ORA-02290", StringComparison.OrdinalIgnoreCase)
+            || mensagem.Contains("ORA-00001", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static void ValidarQuantidade(int quantidade)
     {
         if (quantidade <= 0)
         {
             throw new ArgumentException(
-                $"A quantidade deve ser maior que zero."
+                "A quantidade deve ser maior que zero."
             );
         }
     }

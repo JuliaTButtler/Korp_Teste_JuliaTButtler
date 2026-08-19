@@ -76,6 +76,8 @@ public class NotaFiscalService
             );
         }
 
+        await GarantirItensDisponiveisParaImpressaoAsync(nota.Itens);
+
         var reivindicada = await _context.NotasFiscais
             .Where(n => n.Id == id && n.Status == StatusNotaFiscal.ABERTA)
             .ExecuteUpdateAsync(n => n
@@ -132,6 +134,30 @@ public class NotaFiscalService
         _context.ChangeTracker.Clear();
 
         return await BuscarPorIdAsync(id);
+    }
+
+    private async Task GarantirItensDisponiveisParaImpressaoAsync(
+        List<ItemNotaFiscal> itens
+    )
+    {
+        foreach (var item in itens)
+        {
+            var produto = await _estoqueClient.ObterProdutoAsync(item.ProdutoId);
+
+            if (produto == null)
+            {
+                throw new InvalidOperationException(
+                    $"Produto {item.ProdutoId} não encontrado no estoque."
+                );
+            }
+
+            if (produto.Saldo < item.Quantidade || produto.Reservado < item.Quantidade)
+            {
+                throw new InvalidOperationException(
+                    $"Saldo insuficiente para o produto {item.ProdutoId}."
+                );
+            }
+        }
     }
 
     private async Task<NotaFiscal> PersistirNotaComNumeroAsync(
