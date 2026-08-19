@@ -27,6 +27,10 @@ builder.Services.AddHttpClient<EstoqueClient>(client =>
                 "A URL do microsserviço de estoque não foi configurada."
             )
     );
+
+    client.Timeout = TimeSpan.FromSeconds(
+        builder.Configuration.GetValue("EstoqueApi:TimeoutSeconds", 10)
+    );
 });
 
 builder.Services.AddScoped<NotaFiscalService>();

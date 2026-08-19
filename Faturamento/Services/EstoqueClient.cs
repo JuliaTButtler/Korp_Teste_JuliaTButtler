@@ -24,6 +24,8 @@ public class EstoqueClient
                 return null;
             }
 
+            GarantirEstoqueDisponivel(response);
+
             if (!response.IsSuccessStatusCode)
             {
                 throw new InvalidOperationException(
@@ -33,11 +35,9 @@ public class EstoqueClient
 
             return await response.Content.ReadFromJsonAsync<ProdutoEstoqueResponse>();
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (EhFalhaDeComunicacao(ex))
         {
-            throw new InvalidOperationException(
-                "Serviço de estoque indisponível."
-            );
+            throw EstoqueIndisponivel();
         }
     }
 
@@ -54,6 +54,8 @@ public class EstoqueClient
             {
                 return;
             }
+
+            GarantirEstoqueDisponivel(response);
 
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
@@ -80,11 +82,27 @@ public class EstoqueClient
                 "Não foi possível realizar a baixa no estoque."
             );
         }
-        catch (HttpRequestException)
+        catch (Exception ex) when (EhFalhaDeComunicacao(ex))
         {
-            throw new InvalidOperationException(
-                "Serviço de estoque indisponível."
-            );
+            throw EstoqueIndisponivel();
         }
+    }
+
+    private static void GarantirEstoqueDisponivel(HttpResponseMessage response)
+    {
+        if ((int)response.StatusCode >= 500)
+        {
+            throw EstoqueIndisponivel();
+        }
+    }
+
+    private static bool EhFalhaDeComunicacao(Exception ex)
+    {
+        return ex is HttpRequestException or TaskCanceledException or TimeoutException;
+    }
+
+    private static InvalidOperationException EstoqueIndisponivel()
+    {
+        return new InvalidOperationException("Serviço de estoque indisponível.");
     }
 }
