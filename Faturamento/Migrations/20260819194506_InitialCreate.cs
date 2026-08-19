@@ -50,9 +50,10 @@ namespace Faturamento.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_ITEM_NOTA_FISCAL_NOTA_FISCAL_ID",
+                name: "IX_ITEM_NOTA_FISCAL_NOTA_FISCAL_ID_PRODUTO_ID",
                 table: "ITEM_NOTA_FISCAL",
-                column: "NOTA_FISCAL_ID");
+                columns: new[] { "NOTA_FISCAL_ID", "PRODUTO_ID" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_NOTA_FISCAL_NUMERO",

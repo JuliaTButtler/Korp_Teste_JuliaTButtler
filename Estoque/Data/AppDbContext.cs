@@ -13,42 +13,55 @@ public class AppDbContext : DbContext
     public DbSet<Produto> Produtos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    base.OnModelCreating(modelBuilder);
-
-    modelBuilder.Entity<Produto>(entity =>
     {
-        entity.ToTable("PRODUTO");
+        base.OnModelCreating(modelBuilder);
 
-        entity.HasKey(p => p.Id);
-
-        entity.Property(p => p.Id)
-            .HasColumnName("ID");
-
-        entity.Property(p => p.Codigo)
-            .HasColumnName("CODIGO")
-            .HasMaxLength(50)
-            .IsRequired();
-
-        entity.HasIndex(p => p.Codigo)
-            .IsUnique();
-
-        entity.Property(p => p.Descricao)
-            .HasColumnName("DESCRICAO")
-            .HasMaxLength(255)
-            .IsRequired();
-
-        entity.Property(p => p.Saldo)
-            .HasColumnName("SALDO")
-            .IsRequired();
-
-        entity.ToTable(table =>
+        modelBuilder.Entity<Produto>(entity =>
         {
-            table.HasCheckConstraint(
-                "CK_PRODUTO_SALDO",
-                "\"SALDO\" >= 0"
-            );
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Id)
+                .HasColumnName("ID");
+
+            entity.Property(p => p.Codigo)
+                .HasColumnName("CODIGO")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.HasIndex(p => p.Codigo)
+                .IsUnique();
+
+            entity.Property(p => p.Descricao)
+                .HasColumnName("DESCRICAO")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(p => p.Saldo)
+                .HasColumnName("SALDO")
+                .IsRequired();
+
+            entity.Property(p => p.Reservado)
+                .HasColumnName("RESERVADO")
+                .HasDefaultValue(0)
+                .IsRequired();
+
+            entity.ToTable("PRODUTO", table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_PRODUTO_SALDO",
+                    "\"SALDO\" >= 0"
+                );
+
+                table.HasCheckConstraint(
+                    "CK_PRODUTO_RESERVADO",
+                    "\"RESERVADO\" >= 0"
+                );
+
+                table.HasCheckConstraint(
+                    "CK_PRODUTO_SALDO_RESERVADO",
+                    "\"SALDO\" >= \"RESERVADO\""
+                );
+            });
         });
-    });
-}
+    }
 }

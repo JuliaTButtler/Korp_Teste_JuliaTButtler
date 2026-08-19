@@ -12,7 +12,7 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Faturamento.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260817230410_InitialCreate")]
+    [Migration("20260819194506_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -48,7 +48,8 @@ namespace Faturamento.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NotaFiscalId");
+                    b.HasIndex("NotaFiscalId", "ProdutoId")
+                        .IsUnique();
 
                     b.ToTable("ITEM_NOTA_FISCAL", null, t =>
                         {

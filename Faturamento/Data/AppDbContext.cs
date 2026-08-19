@@ -81,6 +81,9 @@ public class AppDbContext : DbContext
                 .HasForeignKey(i => i.NotaFiscalId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasIndex(i => new { i.NotaFiscalId, i.ProdutoId })
+                .IsUnique();
+
             entity.ToTable(table =>
             {
                 table.HasCheckConstraint(

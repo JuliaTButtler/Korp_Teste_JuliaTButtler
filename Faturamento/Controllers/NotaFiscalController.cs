@@ -1,6 +1,7 @@
 using Faturamento.DTOs;
 using Faturamento.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Faturamento.Controllers;
 
@@ -71,6 +72,13 @@ public class NotaFiscalController : ControllerBase
             return BadRequest(new
             {
                 mensagem = ex.Message
+            });
+        }
+        catch (DbUpdateException)
+        {
+            return Conflict(new
+            {
+                mensagem = "Não foi possível persistir a nota fiscal. Tente novamente."
             });
         }
     }

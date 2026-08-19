@@ -45,7 +45,8 @@ namespace Faturamento.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("NotaFiscalId");
+                    b.HasIndex("NotaFiscalId", "ProdutoId")
+                        .IsUnique();
 
                     b.ToTable("ITEM_NOTA_FISCAL", null, t =>
                         {

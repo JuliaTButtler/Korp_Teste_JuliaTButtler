@@ -42,6 +42,12 @@ namespace Estoque.Migrations
                         .HasColumnType("NVARCHAR2(255)")
                         .HasColumnName("DESCRICAO");
 
+                    b.Property<int>("Reservado")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(10)")
+                        .HasDefaultValue(0)
+                        .HasColumnName("RESERVADO");
+
                     b.Property<int>("Saldo")
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("SALDO");
@@ -53,7 +59,11 @@ namespace Estoque.Migrations
 
                     b.ToTable("PRODUTO", null, t =>
                         {
+                            t.HasCheckConstraint("CK_PRODUTO_RESERVADO", "\"RESERVADO\" >= 0");
+
                             t.HasCheckConstraint("CK_PRODUTO_SALDO", "\"SALDO\" >= 0");
+
+                            t.HasCheckConstraint("CK_PRODUTO_SALDO_RESERVADO", "\"SALDO\" >= \"RESERVADO\"");
                         });
                 });
 #pragma warning restore 612, 618

@@ -41,12 +41,62 @@ public class EstoqueClient
         }
     }
 
-    public async Task BaixarEstoqueAsync(int produtoId, int quantidade)
+    public Task ReservarAsync(int produtoId, int quantidade)
+    {
+        return PostMovimentoAsync(
+            produtoId,
+            "reservar",
+            quantidade,
+            $"Saldo insuficiente para reservar o produto {produtoId}.",
+            "Não foi possível reservar o produto no estoque."
+        );
+    }
+
+    public Task LiberarReservaAsync(int produtoId, int quantidade)
+    {
+        return PostMovimentoAsync(
+            produtoId,
+            "liberar-reserva",
+            quantidade,
+            $"Não foi possível liberar a reserva do produto {produtoId}.",
+            "Não foi possível liberar a reserva no estoque."
+        );
+    }
+
+    public Task BaixarEstoqueAsync(int produtoId, int quantidade)
+    {
+        return PostMovimentoAsync(
+            produtoId,
+            "baixa",
+            quantidade,
+            $"Saldo insuficiente para o produto {produtoId}.",
+            "Não foi possível realizar a baixa no estoque."
+        );
+    }
+
+    public Task EstornarBaixaAsync(int produtoId, int quantidade)
+    {
+        return PostMovimentoAsync(
+            produtoId,
+            "estornar-baixa",
+            quantidade,
+            $"Não foi possível estornar a baixa do produto {produtoId}.",
+            "Não foi possível estornar a baixa no estoque."
+        );
+    }
+
+    private async Task PostMovimentoAsync(
+        int produtoId,
+        string acao,
+        int quantidade,
+        string mensagemConflito,
+        string mensagemGenerica
+    )
     {
         try
         {
             var response = await _httpClient.PostAsJsonAsync(
-                $"api/produto/{produtoId}/baixa",
+                $"api/produto/{produtoId}/{acao}",
                 new { quantidade }
             );
 
@@ -66,9 +116,7 @@ public class EstoqueClient
 
             if (response.StatusCode == HttpStatusCode.Conflict)
             {
-                throw new InvalidOperationException(
-                    $"Saldo insuficiente para o produto {produtoId}."
-                );
+                throw new InvalidOperationException(mensagemConflito);
             }
 
             if (response.StatusCode == HttpStatusCode.BadRequest)
@@ -78,9 +126,7 @@ public class EstoqueClient
                 );
             }
 
-            throw new InvalidOperationException(
-                "Não foi possível realizar a baixa no estoque."
-            );
+            throw new InvalidOperationException(mensagemGenerica);
         }
         catch (Exception ex) when (EhFalhaDeComunicacao(ex))
         {

@@ -9,4 +9,6 @@ public class Produto
     public string Descricao { get; set; } = string.Empty;
 
     public int Saldo { get; set; }
+
+    public int Reservado { get; set; }
 }
