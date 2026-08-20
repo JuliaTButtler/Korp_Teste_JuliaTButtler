@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Produto } from '../../models/produto';
+import { Produto, saldoDisponivel } from '../../models/produto';
 import { NotaFiscalService } from '../../services/nota-fiscal.service';
 import { ProdutoService } from '../../services/produto.service';
 
@@ -18,17 +18,38 @@ interface ItemLocal {
   templateUrl: './nota-nova.html',
   styleUrl: './nota-nova.css',
 })
-export class NotaNova {
+export class NotaNova implements OnInit {
   private readonly produtoService = inject(ProdutoService);
   private readonly notaFiscalService = inject(NotaFiscalService);
   private readonly router = inject(Router);
 
   readonly produtos = this.produtoService.lista;
+  readonly saldoDisponivel = saldoDisponivel;
 
   produtoId: number | null = null;
   quantidade: number | null = null;
   itens: ItemLocal[] = [];
   erro = '';
+  carregando = false;
+  salvando = false;
+
+  ngOnInit(): void {
+    void this.carregarProdutos();
+  }
+
+  async carregarProdutos(): Promise<void> {
+    this.erro = '';
+    this.carregando = true;
+
+    try {
+      await this.produtoService.carregar();
+    } catch (error) {
+      this.erro =
+        error instanceof Error ? error.message : 'Não foi possível carregar os produtos.';
+    } finally {
+      this.carregando = false;
+    }
+  }
 
   produtoSelecionado(): Produto | undefined {
     if (this.produtoId === null) {
@@ -39,7 +60,7 @@ export class NotaNova {
   }
 
   rotuloProduto(produto: Produto): string {
-    return `${produto.codigo} - ${produto.descricao} (saldo: ${produto.saldo})`;
+    return `${produto.codigo} - ${produto.descricao} (disponível: ${saldoDisponivel(produto)})`;
   }
 
   adicionarItem(): void {
@@ -57,8 +78,10 @@ export class NotaNova {
       return;
     }
 
-    if (this.quantidade > produto.saldo) {
-      this.erro = `Saldo insuficiente para o produto ${produto.id}. Saldo disponível: ${produto.saldo}.`;
+    const disponivel = saldoDisponivel(produto);
+
+    if (this.quantidade > disponivel) {
+      this.erro = `Saldo insuficiente para o produto ${produto.id}. Saldo disponível: ${disponivel}.`;
       return;
     }
 
@@ -86,20 +109,25 @@ export class NotaNova {
     this.erro = '';
   }
 
-  criarNota(): void {
+  async criarNota(): Promise<void> {
     this.erro = '';
+    this.salvando = true;
 
     try {
-      this.notaFiscalService.criar(
+      const nota = await this.notaFiscalService.criar(
         this.itens.map((item) => ({
           produtoId: item.produtoId,
           quantidade: item.quantidade,
         }))
       );
 
-      void this.router.navigate(['/notas']);
+      await this.router.navigate(['/notas', nota.id], {
+        state: { nota },
+      });
     } catch (error) {
       this.erro = error instanceof Error ? error.message : 'Não foi possível criar a nota.';
+    } finally {
+      this.salvando = false;
     }
   }
 }

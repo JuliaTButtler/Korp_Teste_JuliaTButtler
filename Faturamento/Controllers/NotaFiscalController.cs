@@ -47,11 +47,7 @@ public class NotaFiscalController : ControllerBase
         {
             var nota = await _service.CriarAsync(request);
 
-            return CreatedAtAction(
-                nameof(BuscarPorId),
-                new { id = nota.Id },
-                nota
-            );
+            return StatusCode(StatusCodes.Status201Created, nota);
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("indisponível"))
         {

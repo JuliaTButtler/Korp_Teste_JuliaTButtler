@@ -12,21 +12,42 @@
     <form class="formulario formulario-produto" (ngSubmit)="cadastrar()">
       <div class="campo">
         <label for="codigo">Código</label>
-        <input id="codigo" name="codigo" [(ngModel)]="codigo" autocomplete="off" />
+        <input
+          id="codigo"
+          name="codigo"
+          [(ngModel)]="codigo"
+          autocomplete="off"
+          [disabled]="formularioBloqueado"
+        />
       </div>
 
       <div class="campo">
         <label for="descricao">Descrição</label>
-        <input id="descricao" name="descricao" [(ngModel)]="descricao" autocomplete="off" />
+        <input
+          id="descricao"
+          name="descricao"
+          [(ngModel)]="descricao"
+          autocomplete="off"
+          [disabled]="formularioBloqueado"
+        />
       </div>
 
       <div class="campo">
         <label for="saldo">Saldo</label>
-        <input id="saldo" name="saldo" type="number" min="0" [(ngModel)]="saldo" />
+        <input
+          id="saldo"
+          name="saldo"
+          type="number"
+          min="0"
+          [(ngModel)]="saldo"
+          [disabled]="formularioBloqueado"
+        />
       </div>
 
       <div class="acoes">
-        <button class="btn btn-primario" type="submit">Cadastrar produto</button>
+        <button class="btn btn-primario" type="submit" [disabled]="formularioBloqueado">
+          {{ salvando ? 'Salvando...' : 'Cadastrar produto' }}
+        </button>
       </div>
     </form>
   </section>
@@ -42,9 +63,15 @@
   <section class="card">
     <h2>Produtos cadastrados</h2>
 
-    @if (produtos().length === 0) {
+    @if (carregando && produtos().length === 0) {
+      <p class="vazio">Carregando produtos...</p>
+    } @else if (produtos().length === 0) {
       <p class="vazio">Nenhum produto cadastrado.</p>
     } @else {
+      @if (carregando) {
+        <p class="dica">Atualizando lista...</p>
+      }
+
       <div class="tabela-wrapper">
         <table class="tabela">
           <thead>
@@ -52,6 +79,8 @@
               <th>Código</th>
               <th>Descrição</th>
               <th>Saldo</th>
+              <th>Reservado</th>
+              <th>Disponível</th>
               <th>Entrada</th>
             </tr>
           </thead>
@@ -61,6 +90,8 @@
                 <td>{{ produto.codigo }}</td>
                 <td>{{ produto.descricao }}</td>
                 <td>{{ produto.saldo }}</td>
+                <td>{{ produto.reservado }}</td>
+                <td>{{ saldoDisponivel(produto) }}</td>
                 <td>
                   <form class="entrada-estoque" (ngSubmit)="entrarEstoque(produto.id)">
                     <input
@@ -69,8 +100,11 @@
                       type="number"
                       min="1"
                       [(ngModel)]="quantidadesEntrada[produto.id]"
+                      [disabled]="salvando"
                     />
-                    <button class="btn btn-secundario btn-pequeno" type="submit">Adicionar</button>
+                    <button class="btn btn-secundario btn-pequeno" type="submit" [disabled]="salvando">
+                      Adicionar
+                    </button>
                   </form>
                 </td>
               </tr>

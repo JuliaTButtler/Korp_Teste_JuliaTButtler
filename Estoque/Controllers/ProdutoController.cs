@@ -47,11 +47,7 @@ public class ProdutoController : ControllerBase
         {
             var produto = await _service.CriarAsync(request);
 
-            return CreatedAtAction(
-                nameof(BuscarPorId),
-                new { id = produto.Id },
-                produto
-            );
+            return StatusCode(StatusCodes.Status201Created, produto);
         }
         catch (InvalidOperationException ex)
         {

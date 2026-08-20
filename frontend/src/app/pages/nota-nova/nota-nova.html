@@ -9,13 +9,24 @@
   <section class="card">
     <h2>Adicionar item</h2>
 
-    @if (produtos().length === 0) {
+    @if (carregando && produtos().length === 0) {
+      <p class="vazio">Carregando produtos...</p>
+    } @else if (produtos().length === 0) {
       <p class="vazio">Cadastre um produto antes de emitir uma nota.</p>
     } @else {
+      @if (carregando) {
+        <p class="dica">Atualizando produtos...</p>
+      }
+
       <form class="formulario formulario-item" (ngSubmit)="adicionarItem()">
         <div class="campo">
           <label for="produto">Produto</label>
-          <select id="produto" name="produto" [(ngModel)]="produtoId">
+          <select
+            id="produto"
+            name="produto"
+            [(ngModel)]="produtoId"
+            [disabled]="salvando"
+          >
             <option [ngValue]="null">Selecione um produto</option>
             @for (produto of produtos(); track produto.id) {
               <option [ngValue]="produto.id">{{ rotuloProduto(produto) }}</option>
@@ -25,14 +36,26 @@
 
         <div class="campo">
           <label for="quantidade">Quantidade</label>
-          <input id="quantidade" name="quantidade" type="number" min="1" [(ngModel)]="quantidade" />
+          <input
+            id="quantidade"
+            name="quantidade"
+            type="number"
+            min="1"
+            [(ngModel)]="quantidade"
+            [disabled]="salvando"
+          />
           @if (produtoSelecionado(); as produto) {
-            <span class="dica">Saldo disponível: {{ produto.saldo }}</span>
+            <span class="dica">
+              Saldo disponível: {{ saldoDisponivel(produto) }}
+              (saldo {{ produto.saldo }} − reservado {{ produto.reservado }})
+            </span>
           }
         </div>
 
         <div class="acoes">
-          <button class="btn btn-secundario" type="submit">Adicionar item</button>
+          <button class="btn btn-secundario" type="submit" [disabled]="salvando">
+            Adicionar item
+          </button>
         </div>
       </form>
     }
@@ -65,7 +88,12 @@
                 <td>{{ item.descricao }}</td>
                 <td>{{ item.quantidade }}</td>
                 <td class="direita">
-                  <button class="btn btn-perigo btn-pequeno" type="button" (click)="removerItem(item.produtoId)">
+                  <button
+                    class="btn btn-perigo btn-pequeno"
+                    type="button"
+                    [disabled]="salvando"
+                    (click)="removerItem(item.produtoId)"
+                  >
                     Remover
                   </button>
                 </td>
@@ -79,8 +107,13 @@
 
   <div class="acoes entre rodape-acoes">
     <a routerLink="/notas" class="btn btn-secundario">Voltar</a>
-    <button class="btn btn-primario" type="button" [disabled]="itens.length === 0" (click)="criarNota()">
-      Criar Nota
+    <button
+      class="btn btn-primario"
+      type="button"
+      [disabled]="itens.length === 0 || salvando"
+      (click)="criarNota()"
+    >
+      {{ salvando ? 'Criando...' : 'Criar Nota' }}
     </button>
   </div>
 </section>

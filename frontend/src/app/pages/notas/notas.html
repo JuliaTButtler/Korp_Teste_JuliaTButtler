@@ -8,10 +8,20 @@
     <a routerLink="/notas/nova" class="btn btn-primario">Nova Nota</a>
   </div>
 
+  @if (erro) {
+    <p class="alerta alerta-erro">{{ erro }}</p>
+  }
+
   <section class="card">
-    @if (notas().length === 0) {
+    @if (carregando && notas().length === 0) {
+      <p class="vazio">Carregando notas fiscais...</p>
+    } @else if (notas().length === 0) {
       <p class="vazio">Nenhuma nota fiscal cadastrada.</p>
     } @else {
+      @if (carregando) {
+        <p class="dica">Atualizando lista...</p>
+      }
+
       <div class="tabela-wrapper">
         <table class="tabela">
           <thead>

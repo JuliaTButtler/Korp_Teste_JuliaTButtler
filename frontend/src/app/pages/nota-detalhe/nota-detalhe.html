@@ -1,5 +1,9 @@
 <section class="pagina">
-  @if (nota(); as notaAtual) {
+  @if (carregando && !nota()) {
+    <section class="card">
+      <p class="vazio">Carregando nota fiscal...</p>
+    </section>
+  } @else if (nota(); as notaAtual) {
     <div class="pagina-cabecalho">
       <div>
         <h1>Nota {{ formatarNumeroNota(notaAtual.numero) }}</h1>
@@ -44,17 +48,31 @@
       <p class="alerta alerta-erro">{{ erro }}</p>
     }
 
+    @if (imprimindo) {
+      <p class="alerta alerta-processando">Imprimindo nota e atualizando o estoque...</p>
+    }
+
     <div class="acoes entre rodape-acoes">
-      <a routerLink="/notas" class="btn btn-secundario">Voltar</a>
+      <a routerLink="/notas" class="btn btn-secundario" [class.desabilitado]="imprimindo">Voltar</a>
 
       @if (notaAtual.status === 'ABERTA') {
-        <button class="btn btn-primario" type="button" (click)="imprimir()">Imprimir</button>
+        <button
+          class="btn btn-primario"
+          type="button"
+          [disabled]="imprimindo"
+          (click)="imprimir()"
+        >
+          {{ imprimindo ? 'Imprimindo...' : 'Imprimir' }}
+        </button>
       }
     </div>
   } @else {
     <section class="card">
       <h1>Nota não encontrada</h1>
       <p class="subtitulo">Essa nota não existe ou foi removida.</p>
+      @if (erro) {
+        <p class="alerta alerta-erro">{{ erro }}</p>
+      }
       <div class="acoes rodape-acoes">
         <a routerLink="/notas" class="btn btn-secundario">Voltar</a>
       </div>

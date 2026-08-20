@@ -1,23 +1,43 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { catchError, firstValueFrom, timeout, throwError } from 'rxjs';
 import { Produto } from '../models/produto';
+import { mensagemErroHttp } from '../utils/api-error';
 
 @Injectable({ providedIn: 'root' })
 export class ProdutoService {
-  private nextId = 4;
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = '/api-estoque/produto';
+  private readonly timeoutMs = 15000;
 
-  private readonly produtos = signal<Produto[]>([
-    { id: 1, codigo: '001', descricao: 'Arroz', saldo: 10 },
-    { id: 2, codigo: '002', descricao: 'Feijão', saldo: 20 },
-    { id: 3, codigo: '003', descricao: 'Macarrão', saldo: 14 },
-  ]);
+  private readonly produtos = signal<Produto[]>([]);
 
   readonly lista = this.produtos.asReadonly();
+
+  async carregar(): Promise<void> {
+    try {
+      const lista = await firstValueFrom(
+        this.http.get<Produto[]>(this.baseUrl).pipe(
+          timeout(this.timeoutMs),
+          catchError((error) => this.rejeitar(error, 'Não foi possível carregar os produtos.'))
+        )
+      );
+      this.produtos.set(
+        lista.map((produto) => ({
+          ...produto,
+          reservado: produto.reservado ?? 0,
+        }))
+      );
+    } catch (error) {
+      throw this.normalizarErro(error, 'Não foi possível carregar os produtos.');
+    }
+  }
 
   buscarPorId(id: number): Produto | undefined {
     return this.produtos().find((produto) => produto.id === id);
   }
 
-  criar(codigo: string, descricao: string, saldo: number): Produto {
+  async criar(codigo: string, descricao: string, saldo: number): Promise<Produto> {
     const codigoNormalizado = codigo.trim();
     const descricaoNormalizada = descricao.trim();
 
@@ -45,65 +65,73 @@ export class ProdutoService {
       throw new Error('Já existe um produto cadastrado com esse código.');
     }
 
-    const produto: Produto = {
-      id: this.nextId++,
-      codigo: codigoNormalizado,
-      descricao: descricaoNormalizada,
-      saldo,
-    };
+    try {
+      const produto = await firstValueFrom(
+        this.http
+          .post<Produto>(this.baseUrl, {
+            codigo: codigoNormalizado,
+            descricao: descricaoNormalizada,
+            saldo,
+          })
+          .pipe(
+            timeout(this.timeoutMs),
+            catchError((error) =>
+              this.rejeitar(error, 'Não foi possível cadastrar o produto.')
+            )
+          )
+      );
 
-    this.produtos.update((lista) => [...lista, produto]);
+      this.produtos.update((lista) => [
+        ...lista,
+        { ...produto, reservado: produto.reservado ?? 0 },
+      ]);
 
-    return produto;
+      return produto;
+    } catch (error) {
+      throw this.normalizarErro(error, 'Não foi possível cadastrar o produto.');
+    }
   }
 
-  baixarEstoque(id: number, quantidade: number): Produto {
-    if (quantidade <= 0) {
-      throw new Error('A quantidade da baixa deve ser maior que zero.');
-    }
-
-    const produto = this.buscarPorId(id);
-
-    if (!produto) {
-      throw new Error('Produto não encontrado.');
-    }
-
-    if (produto.saldo < quantidade) {
-      throw new Error('Saldo insuficiente para realizar a baixa.');
-    }
-
-    const atualizado: Produto = {
-      ...produto,
-      saldo: produto.saldo - quantidade,
-    };
-
-    this.produtos.update((lista) =>
-      lista.map((item) => (item.id === id ? atualizado : item))
-    );
-
-    return atualizado;
-  }
-
-  entrarEstoque(id: number, quantidade: number): Produto {
+  async entrarEstoque(id: number, quantidade: number): Promise<Produto> {
     if (quantidade <= 0) {
       throw new Error('A quantidade da entrada deve ser maior que zero.');
     }
 
-    const produto = this.buscarPorId(id);
+    try {
+      const atualizado = await firstValueFrom(
+        this.http
+          .post<Produto>(`${this.baseUrl}/${id}/entrada`, { quantidade })
+          .pipe(
+            timeout(this.timeoutMs),
+            catchError((error) =>
+              this.rejeitar(error, 'Não foi possível registrar a entrada.')
+            )
+          )
+      );
 
-    if (!produto) {
-      throw new Error('Produto não encontrado.');
+      this.produtos.update((lista) =>
+        lista.map((item) =>
+          item.id === id
+            ? { ...atualizado, reservado: atualizado.reservado ?? 0 }
+            : item
+        )
+      );
+
+      return atualizado;
+    } catch (error) {
+      throw this.normalizarErro(error, 'Não foi possível registrar a entrada.');
+    }
+  }
+
+  private rejeitar(error: unknown, fallback: string) {
+    return throwError(() => this.normalizarErro(error, fallback));
+  }
+
+  private normalizarErro(error: unknown, fallback: string): Error {
+    if (error instanceof Error && !(error instanceof HttpErrorResponse)) {
+      return error;
     }
 
-    const atualizado: Produto = {
-      ...produto,
-      saldo: produto.saldo + quantidade,
-    };
-
-    this.produtos.update((lista) =>
-      lista.map((item) => (item.id === id ? atualizado : item))
-    );
-
-    return atualizado;
+    return new Error(mensagemErroHttp(error, fallback));
   }
 }

@@ -184,6 +184,7 @@ p {
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 0.92rem;
+  margin-top: 16px;
 }
 
 .alerta-erro {
@@ -194,6 +195,22 @@ p {
 .alerta-sucesso {
   background: var(--cor-sucesso-bg);
   color: var(--cor-sucesso);
+}
+
+.alerta-processando {
+  background: #eaf1fb;
+  color: var(--cor-primaria);
+}
+
+.alerta + .card,
+.card + .alerta,
+.alerta + .acoes {
+  margin-top: 16px;
+}
+
+.btn.desabilitado {
+  pointer-events: none;
+  opacity: 0.55;
 }
 
 .tabela-wrapper {
