@@ -6,11 +6,24 @@
     </div>
   </div>
 
+  @if (erro) {
+    <p class="alerta alerta-erro">{{ erro }}</p>
+  }
+
   <section class="card">
     <h2>Adicionar item</h2>
 
     @if (carregando && produtos().length === 0) {
       <p class="vazio">Carregando produtos...</p>
+    } @else if (!estoqueDisponivel()) {
+      <p class="alerta alerta-erro">
+        Serviço de estoque indisponível. Não é possível montar ou criar notas no momento.
+      </p>
+      <div class="acoes">
+        <button class="btn btn-secundario" type="button" (click)="carregarProdutos()" [disabled]="carregando">
+          Tentar novamente
+        </button>
+      </div>
     } @else if (produtos().length === 0) {
       <p class="vazio">Cadastre um produto antes de emitir uma nota.</p>
     } @else {
@@ -25,7 +38,7 @@
             id="produto"
             name="produto"
             [(ngModel)]="produtoId"
-            [disabled]="salvando"
+            [disabled]="formularioBloqueado"
           >
             <option [ngValue]="null">Selecione um produto</option>
             @for (produto of produtos(); track produto.id) {
@@ -42,7 +55,7 @@
             type="number"
             min="1"
             [(ngModel)]="quantidade"
-            [disabled]="salvando"
+            [disabled]="formularioBloqueado"
           />
           @if (produtoSelecionado(); as produto) {
             <span class="dica">
@@ -53,15 +66,11 @@
         </div>
 
         <div class="acoes">
-          <button class="btn btn-secundario" type="submit" [disabled]="salvando">
+          <button class="btn btn-secundario" type="submit" [disabled]="formularioBloqueado">
             Adicionar item
           </button>
         </div>
       </form>
-    }
-
-    @if (erro) {
-      <p class="alerta alerta-erro">{{ erro }}</p>
     }
   </section>
 
@@ -91,7 +100,7 @@
                   <button
                     class="btn btn-perigo btn-pequeno"
                     type="button"
-                    [disabled]="salvando"
+                    [disabled]="formularioBloqueado"
                     (click)="removerItem(item.produtoId)"
                   >
                     Remover
@@ -110,7 +119,7 @@
     <button
       class="btn btn-primario"
       type="button"
-      [disabled]="itens.length === 0 || salvando"
+      [disabled]="itens.length === 0 || formularioBloqueado"
       (click)="criarNota()"
     >
       {{ salvando ? 'Criando...' : 'Criar Nota' }}

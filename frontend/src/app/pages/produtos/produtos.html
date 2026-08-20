@@ -6,8 +6,22 @@
     </div>
   </div>
 
+  @if (erro) {
+    <p class="alerta alerta-erro">{{ erro }}</p>
+  }
+
+  @if (sucesso) {
+    <p class="alerta alerta-sucesso">{{ sucesso }}</p>
+  }
+
   <section class="card">
     <h2>Novo produto</h2>
+
+    @if (!estoqueDisponivel() && !carregando) {
+      <p class="alerta alerta-erro">
+        Serviço de estoque indisponível. Não é possível cadastrar produtos no momento.
+      </p>
+    }
 
     <form class="formulario formulario-produto" (ngSubmit)="cadastrar()">
       <div class="campo">
@@ -45,26 +59,23 @@
       </div>
 
       <div class="acoes">
+        <button class="btn btn-secundario" type="button" (click)="carregar()" [disabled]="carregando || salvando">
+          Tentar novamente
+        </button>
         <button class="btn btn-primario" type="submit" [disabled]="formularioBloqueado">
-          {{ salvando ? 'Salvando...' : 'Cadastrar produto' }}
+          {{ salvando ? 'Salvando...' : carregando ? 'Verificando...' : 'Cadastrar produto' }}
         </button>
       </div>
     </form>
   </section>
-
-  @if (erro) {
-    <p class="alerta alerta-erro">{{ erro }}</p>
-  }
-
-  @if (sucesso) {
-    <p class="alerta alerta-sucesso">{{ sucesso }}</p>
-  }
 
   <section class="card">
     <h2>Produtos cadastrados</h2>
 
     @if (carregando && produtos().length === 0) {
       <p class="vazio">Carregando produtos...</p>
+    } @else if (!estoqueDisponivel() && produtos().length === 0) {
+      <p class="vazio">Não foi possível carregar os produtos. O serviço de estoque está indisponível.</p>
     } @else if (produtos().length === 0) {
       <p class="vazio">Nenhum produto cadastrado.</p>
     } @else {
@@ -100,9 +111,9 @@
                       type="number"
                       min="1"
                       [(ngModel)]="quantidadesEntrada[produto.id]"
-                      [disabled]="salvando"
+                      [disabled]="formularioBloqueado"
                     />
-                    <button class="btn btn-secundario btn-pequeno" type="submit" [disabled]="salvando">
+                    <button class="btn btn-secundario btn-pequeno" type="submit" [disabled]="formularioBloqueado">
                       Adicionar
                     </button>
                   </form>

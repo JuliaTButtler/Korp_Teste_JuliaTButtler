@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NotaFiscal } from '../../models/nota-fiscal';
 import { ProdutoService } from '../../services/produto.service';
@@ -24,6 +24,7 @@ export class NotaDetalhe implements OnInit {
   private readonly router = inject(Router);
   private readonly notaFiscalService = inject(NotaFiscalService);
   private readonly produtoService = inject(ProdutoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   private readonly notaId = Number(this.route.snapshot.paramMap.get('id'));
   private readonly notaInicial = this.lerNotaDaNavegacao();
@@ -49,11 +50,13 @@ export class NotaDetalhe implements OnInit {
     if (notaPronta) {
       this.aplicarNota(notaPronta);
       this.carregando = false;
+      this.cdr.detectChanges();
       await this.atualizarProdutosDosItens();
       return;
     }
 
     this.carregando = true;
+    this.cdr.detectChanges();
 
     try {
       const [nota] = await Promise.all([
@@ -72,6 +75,7 @@ export class NotaDetalhe implements OnInit {
         error instanceof Error ? error.message : 'Não foi possível carregar a nota.';
     } finally {
       this.carregando = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -87,6 +91,7 @@ export class NotaDetalhe implements OnInit {
     }
 
     this.imprimindo = true;
+    this.cdr.detectChanges();
 
     try {
       const nota = await this.notaFiscalService.imprimir(this.notaId);
@@ -104,6 +109,7 @@ export class NotaDetalhe implements OnInit {
       }
     } finally {
       this.imprimindo = false;
+      this.cdr.detectChanges();
     }
   }
 

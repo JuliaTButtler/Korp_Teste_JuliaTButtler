@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProdutoService } from '../../services/produto.service';
 import { saldoDisponivel } from '../../models/produto';
@@ -11,8 +11,10 @@ import { saldoDisponivel } from '../../models/produto';
 })
 export class Produtos implements OnInit {
   private readonly produtoService = inject(ProdutoService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly produtos = this.produtoService.lista;
+  readonly estoqueDisponivel = this.produtoService.disponivel;
   readonly saldoDisponivel = saldoDisponivel;
 
   codigo = '';
@@ -25,7 +27,7 @@ export class Produtos implements OnInit {
   salvando = false;
 
   get formularioBloqueado(): boolean {
-    return this.salvando || (this.carregando && this.produtos().length === 0);
+    return this.salvando || this.carregando || !this.estoqueDisponivel();
   }
 
   ngOnInit(): void {
@@ -34,20 +36,24 @@ export class Produtos implements OnInit {
 
   async carregar(): Promise<void> {
     this.erro = '';
+    this.sucesso = '';
     this.carregando = true;
+    this.cdr.detectChanges();
 
     try {
       await this.produtoService.carregar();
     } catch (error) {
       this.erro =
-        error instanceof Error ? error.message : 'Não foi possível carregar os produtos.';
+        error instanceof Error ? error.message : 'Serviço de estoque indisponível.';
     } finally {
       this.carregando = false;
+      this.salvando = false;
+      this.cdr.detectChanges();
     }
   }
 
   async cadastrar(): Promise<void> {
-    if (this.salvando) {
+    if (this.salvando || this.carregando) {
       return;
     }
 
@@ -66,6 +72,7 @@ export class Produtos implements OnInit {
     }
 
     this.salvando = true;
+    this.cdr.detectChanges();
 
     try {
       if (this.saldo === null) {
@@ -78,20 +85,23 @@ export class Produtos implements OnInit {
       this.descricao = '';
       this.saldo = null;
     } catch (error) {
-      this.erro = error instanceof Error ? error.message : 'Não foi possível cadastrar o produto.';
+      this.erro =
+        error instanceof Error ? error.message : 'Serviço de estoque indisponível.';
     } finally {
       this.salvando = false;
+      this.cdr.detectChanges();
     }
   }
 
   async entrarEstoque(produtoId: number): Promise<void> {
-    if (this.salvando) {
+    if (this.salvando || this.carregando) {
       return;
     }
 
     this.erro = '';
     this.sucesso = '';
     this.salvando = true;
+    this.cdr.detectChanges();
 
     try {
       const quantidade = this.quantidadesEntrada[produtoId];
@@ -104,9 +114,11 @@ export class Produtos implements OnInit {
       this.sucesso = 'Entrada de estoque registrada com sucesso.';
       this.quantidadesEntrada[produtoId] = null;
     } catch (error) {
-      this.erro = error instanceof Error ? error.message : 'Não foi possível registrar a entrada.';
+      this.erro =
+        error instanceof Error ? error.message : 'Serviço de estoque indisponível.';
     } finally {
       this.salvando = false;
+      this.cdr.detectChanges();
     }
   }
 }

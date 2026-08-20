@@ -1,35 +1,37 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
-import { catchError, firstValueFrom, timeout, throwError } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { API_ESTOQUE } from '../config/api';
 import { Produto } from '../models/produto';
-import { mensagemErroHttp } from '../utils/api-error';
+import { apiJson } from '../utils/api-error';
 
 @Injectable({ providedIn: 'root' })
 export class ProdutoService {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api-estoque/produto';
-  private readonly timeoutMs = 15000;
+  private readonly baseUrl = `${API_ESTOQUE}/produto`;
+  private readonly timeoutMs = 5000;
 
   private readonly produtos = signal<Produto[]>([]);
+  private readonly servicoDisponivel = signal(true);
 
   readonly lista = this.produtos.asReadonly();
+  readonly disponivel = this.servicoDisponivel.asReadonly();
 
   async carregar(): Promise<void> {
     try {
-      const lista = await firstValueFrom(
-        this.http.get<Produto[]>(this.baseUrl).pipe(
-          timeout(this.timeoutMs),
-          catchError((error) => this.rejeitar(error, 'Não foi possível carregar os produtos.'))
-        )
-      );
+      const lista = await apiJson<Produto[]>(this.baseUrl, {
+        servico: 'estoque',
+        fallback: 'Não foi possível carregar os produtos.',
+        timeoutMs: this.timeoutMs,
+      });
+
       this.produtos.set(
         lista.map((produto) => ({
           ...produto,
           reservado: produto.reservado ?? 0,
         }))
       );
+      this.servicoDisponivel.set(true);
     } catch (error) {
-      throw this.normalizarErro(error, 'Não foi possível carregar os produtos.');
+      this.servicoDisponivel.set(false);
+      throw error;
     }
   }
 
@@ -66,29 +68,28 @@ export class ProdutoService {
     }
 
     try {
-      const produto = await firstValueFrom(
-        this.http
-          .post<Produto>(this.baseUrl, {
-            codigo: codigoNormalizado,
-            descricao: descricaoNormalizada,
-            saldo,
-          })
-          .pipe(
-            timeout(this.timeoutMs),
-            catchError((error) =>
-              this.rejeitar(error, 'Não foi possível cadastrar o produto.')
-            )
-          )
-      );
+      const produto = await apiJson<Produto>(this.baseUrl, {
+        method: 'POST',
+        body: {
+          codigo: codigoNormalizado,
+          descricao: descricaoNormalizada,
+          saldo,
+        },
+        servico: 'estoque',
+        fallback: 'Não foi possível cadastrar o produto.',
+        timeoutMs: this.timeoutMs,
+      });
 
       this.produtos.update((lista) => [
         ...lista,
         { ...produto, reservado: produto.reservado ?? 0 },
       ]);
+      this.servicoDisponivel.set(true);
 
       return produto;
     } catch (error) {
-      throw this.normalizarErro(error, 'Não foi possível cadastrar o produto.');
+      this.marcarIndisponivelSeAplicavel(error);
+      throw error;
     }
   }
 
@@ -98,16 +99,13 @@ export class ProdutoService {
     }
 
     try {
-      const atualizado = await firstValueFrom(
-        this.http
-          .post<Produto>(`${this.baseUrl}/${id}/entrada`, { quantidade })
-          .pipe(
-            timeout(this.timeoutMs),
-            catchError((error) =>
-              this.rejeitar(error, 'Não foi possível registrar a entrada.')
-            )
-          )
-      );
+      const atualizado = await apiJson<Produto>(`${this.baseUrl}/${id}/entrada`, {
+        method: 'POST',
+        body: { quantidade },
+        servico: 'estoque',
+        fallback: 'Não foi possível registrar a entrada.',
+        timeoutMs: this.timeoutMs,
+      });
 
       this.produtos.update((lista) =>
         lista.map((item) =>
@@ -116,22 +114,21 @@ export class ProdutoService {
             : item
         )
       );
+      this.servicoDisponivel.set(true);
 
       return atualizado;
     } catch (error) {
-      throw this.normalizarErro(error, 'Não foi possível registrar a entrada.');
+      this.marcarIndisponivelSeAplicavel(error);
+      throw error;
     }
   }
 
-  private rejeitar(error: unknown, fallback: string) {
-    return throwError(() => this.normalizarErro(error, fallback));
-  }
+  private marcarIndisponivelSeAplicavel(error: unknown): void {
+    const mensagem =
+      error instanceof Error ? error.message.toLowerCase() : '';
 
-  private normalizarErro(error: unknown, fallback: string): Error {
-    if (error instanceof Error && !(error instanceof HttpErrorResponse)) {
-      return error;
+    if (mensagem.includes('indisponível') || mensagem.includes('indisponivel')) {
+      this.servicoDisponivel.set(false);
     }
-
-    return new Error(mensagemErroHttp(error, fallback));
   }
 }

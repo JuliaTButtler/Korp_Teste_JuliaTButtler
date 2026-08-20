@@ -1,5 +1,5 @@
+import { ChangeDetectorRef, Component, OnInit, computed, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { NotaFiscalService } from '../../services/nota-fiscal.service';
 import { formatarNumeroNota } from '../../utils/formatacao';
@@ -12,6 +12,7 @@ import { formatarNumeroNota } from '../../utils/formatacao';
 })
 export class Notas implements OnInit {
   private readonly notaFiscalService = inject(NotaFiscalService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly notas = computed(() => this.notaFiscalService.listarTodos());
   readonly formatarNumeroNota = formatarNumeroNota;
@@ -26,6 +27,7 @@ export class Notas implements OnInit {
   async carregar(): Promise<void> {
     this.erro = '';
     this.carregando = true;
+    this.cdr.detectChanges();
 
     try {
       await this.notaFiscalService.carregar();
@@ -33,9 +35,10 @@ export class Notas implements OnInit {
       this.erro =
         error instanceof Error
           ? error.message
-          : 'Não foi possível carregar as notas fiscais.';
+          : 'Serviço de faturamento indisponível.';
     } finally {
       this.carregando = false;
+      this.cdr.detectChanges();
     }
   }
 }

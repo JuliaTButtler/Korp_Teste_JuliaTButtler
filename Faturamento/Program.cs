@@ -29,11 +29,20 @@ builder.Services.AddHttpClient<EstoqueClient>(client =>
     );
 
     client.Timeout = TimeSpan.FromSeconds(
-        builder.Configuration.GetValue("EstoqueApi:TimeoutSeconds", 10)
+        builder.Configuration.GetValue("EstoqueApi:TimeoutSeconds", 3)
     );
 });
 
 builder.Services.AddScoped<NotaFiscalService>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+    );
+});
 
 builder.Services.AddAuthorization();
 
@@ -49,6 +58,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors();
 
 app.UseAuthorization();
 

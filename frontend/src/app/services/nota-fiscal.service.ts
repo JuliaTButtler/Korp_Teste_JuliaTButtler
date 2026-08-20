@@ -1,36 +1,36 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
-import { catchError, firstValueFrom, timeout, throwError } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
+import { API_FATURAMENTO } from '../config/api';
 import {
   CriarNotaFiscalRequest,
   ItemNotaFiscalRequest,
   NotaFiscal,
 } from '../models/nota-fiscal';
-import { mensagemErroHttp } from '../utils/api-error';
+import { ApiError, apiJson } from '../utils/api-error';
 
 @Injectable({ providedIn: 'root' })
 export class NotaFiscalService {
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api-faturamento/NotaFiscal';
-  private readonly timeoutMs = 15000;
+  private readonly baseUrl = `${API_FATURAMENTO}/NotaFiscal`;
+  private readonly timeoutMs = 5000;
 
   private readonly notas = signal<NotaFiscal[]>([]);
+  private readonly servicoDisponivel = signal(true);
 
   readonly lista = this.notas.asReadonly();
+  readonly disponivel = this.servicoDisponivel.asReadonly();
 
   async carregar(): Promise<void> {
     try {
-      const lista = await firstValueFrom(
-        this.http.get<NotaFiscal[]>(this.baseUrl).pipe(
-          timeout(this.timeoutMs),
-          catchError((error) =>
-            this.rejeitar(error, 'Não foi possível carregar as notas fiscais.')
-          )
-        )
-      );
+      const lista = await apiJson<NotaFiscal[]>(this.baseUrl, {
+        servico: 'faturamento',
+        fallback: 'Não foi possível carregar as notas fiscais.',
+        timeoutMs: this.timeoutMs,
+      });
+
       this.notas.set(lista);
+      this.servicoDisponivel.set(true);
     } catch (error) {
-      throw this.normalizarErro(error, 'Não foi possível carregar as notas fiscais.');
+      this.servicoDisponivel.set(false);
+      throw error;
     }
   }
 
@@ -42,24 +42,22 @@ export class NotaFiscalService {
     }
 
     try {
-      return await firstValueFrom(
-        this.http.get<NotaFiscal>(`${this.baseUrl}/${id}`).pipe(
-          timeout(this.timeoutMs),
-          catchError((error) => {
-            if (error instanceof HttpErrorResponse && error.status === 404) {
-              return throwError(() => error);
-            }
-
-            return this.rejeitar(error, 'Não foi possível carregar a nota fiscal.');
-          })
-        )
-      );
+      const nota = await apiJson<NotaFiscal>(`${this.baseUrl}/${id}`, {
+        servico: 'faturamento',
+        fallback: 'Não foi possível carregar a nota fiscal.',
+        timeoutMs: this.timeoutMs,
+      });
+      this.servicoDisponivel.set(true);
+      return nota;
     } catch (error) {
-      if (error instanceof HttpErrorResponse && error.status === 404) {
+      if (error instanceof ApiError && error.status === 404) {
         return undefined;
       }
 
-      throw this.normalizarErro(error, 'Não foi possível carregar a nota fiscal.');
+      this.marcarIndisponivelSeAplicavel(error);
+      throw error instanceof Error
+        ? error
+        : new Error('Não foi possível carregar a nota fiscal.');
     }
   }
 
@@ -77,39 +75,43 @@ export class NotaFiscalService {
     const body: CriarNotaFiscalRequest = { itens };
 
     try {
-      const nota = await firstValueFrom(
-        this.http.post<NotaFiscal>(this.baseUrl, body).pipe(
-          timeout(this.timeoutMs),
-          catchError((error) => this.rejeitar(error, 'Não foi possível criar a nota.'))
-        )
-      );
+      const nota = await apiJson<NotaFiscal>(this.baseUrl, {
+        method: 'POST',
+        body,
+        servico: 'faturamento',
+        fallback: 'Não foi possível criar a nota.',
+        timeoutMs: 12000,
+      });
 
       this.notas.update((lista) => [nota, ...lista]);
+      this.servicoDisponivel.set(true);
 
       return nota;
     } catch (error) {
-      throw this.normalizarErro(error, 'Não foi possível criar a nota.');
+      this.marcarIndisponivelSeAplicavel(error);
+      throw error;
     }
   }
 
   async imprimir(id: number): Promise<NotaFiscal> {
     try {
-      const nota = await firstValueFrom(
-        this.http.post<NotaFiscal>(`${this.baseUrl}/${id}/imprimir`, {}).pipe(
-          timeout(this.timeoutMs),
-          catchError((error) =>
-            this.rejeitar(error, 'Não foi possível imprimir a nota.')
-          )
-        )
-      );
+      const nota = await apiJson<NotaFiscal>(`${this.baseUrl}/${id}/imprimir`, {
+        method: 'POST',
+        body: {},
+        servico: 'faturamento',
+        fallback: 'Não foi possível imprimir a nota.',
+        timeoutMs: 20000,
+      });
 
       this.notas.update((lista) =>
         lista.map((item) => (item.id === id ? nota : item))
       );
+      this.servicoDisponivel.set(true);
 
       return nota;
     } catch (error) {
-      throw this.normalizarErro(error, 'Não foi possível imprimir a nota.');
+      this.marcarIndisponivelSeAplicavel(error);
+      throw error;
     }
   }
 
@@ -135,15 +137,12 @@ export class NotaFiscalService {
     }
   }
 
-  private rejeitar(error: unknown, fallback: string) {
-    return throwError(() => this.normalizarErro(error, fallback));
-  }
+  private marcarIndisponivelSeAplicavel(error: unknown): void {
+    const mensagem =
+      error instanceof Error ? error.message.toLowerCase() : '';
 
-  private normalizarErro(error: unknown, fallback: string): Error {
-    if (error instanceof Error && !(error instanceof HttpErrorResponse)) {
-      return error;
+    if (mensagem.includes('indisponível') || mensagem.includes('indisponivel')) {
+      this.servicoDisponivel.set(false);
     }
-
-    return new Error(mensagemErroHttp(error, fallback));
   }
 }

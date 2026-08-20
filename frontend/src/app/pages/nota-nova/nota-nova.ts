@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Produto, saldoDisponivel } from '../../models/produto';
@@ -22,8 +22,10 @@ export class NotaNova implements OnInit {
   private readonly produtoService = inject(ProdutoService);
   private readonly notaFiscalService = inject(NotaFiscalService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly produtos = this.produtoService.lista;
+  readonly estoqueDisponivel = this.produtoService.disponivel;
   readonly saldoDisponivel = saldoDisponivel;
 
   produtoId: number | null = null;
@@ -33,6 +35,10 @@ export class NotaNova implements OnInit {
   carregando = false;
   salvando = false;
 
+  get formularioBloqueado(): boolean {
+    return this.salvando || this.carregando || !this.estoqueDisponivel();
+  }
+
   ngOnInit(): void {
     void this.carregarProdutos();
   }
@@ -40,14 +46,20 @@ export class NotaNova implements OnInit {
   async carregarProdutos(): Promise<void> {
     this.erro = '';
     this.carregando = true;
+    this.cdr.detectChanges();
 
     try {
       await this.produtoService.carregar();
     } catch (error) {
       this.erro =
-        error instanceof Error ? error.message : 'Não foi possível carregar os produtos.';
+        error instanceof Error ? error.message : 'Serviço de estoque indisponível.';
+      this.itens = [];
+      this.produtoId = null;
+      this.quantidade = null;
     } finally {
       this.carregando = false;
+      this.salvando = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -65,6 +77,11 @@ export class NotaNova implements OnInit {
 
   adicionarItem(): void {
     this.erro = '';
+
+    if (!this.estoqueDisponivel()) {
+      this.erro = 'Serviço de estoque indisponível.';
+      return;
+    }
 
     const produto = this.produtoSelecionado();
 
@@ -110,8 +127,18 @@ export class NotaNova implements OnInit {
   }
 
   async criarNota(): Promise<void> {
+    if (this.salvando || this.carregando) {
+      return;
+    }
+
+    if (!this.estoqueDisponivel()) {
+      this.erro = 'Serviço de estoque indisponível.';
+      return;
+    }
+
     this.erro = '';
     this.salvando = true;
+    this.cdr.detectChanges();
 
     try {
       const nota = await this.notaFiscalService.criar(
@@ -125,9 +152,11 @@ export class NotaNova implements OnInit {
         state: { nota },
       });
     } catch (error) {
-      this.erro = error instanceof Error ? error.message : 'Não foi possível criar a nota.';
+      this.erro =
+        error instanceof Error ? error.message : 'Não foi possível criar a nota.';
     } finally {
       this.salvando = false;
+      this.cdr.detectChanges();
     }
   }
 }

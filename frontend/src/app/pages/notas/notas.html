@@ -15,6 +15,13 @@
   <section class="card">
     @if (carregando && notas().length === 0) {
       <p class="vazio">Carregando notas fiscais...</p>
+    } @else if (erro && notas().length === 0) {
+      <p class="vazio">{{ erro }}</p>
+      <div class="acoes">
+        <button class="btn btn-secundario" type="button" (click)="carregar()" [disabled]="carregando">
+          Tentar novamente
+        </button>
+      </div>
     } @else if (notas().length === 0) {
       <p class="vazio">Nenhuma nota fiscal cadastrada.</p>
     } @else {
