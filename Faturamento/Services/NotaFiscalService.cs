@@ -61,6 +61,7 @@ public class NotaFiscalService
     public async Task<NotaFiscal?> ImprimirAsync(int id)
     {
         var nota = await _context.NotasFiscais
+            .AsNoTracking()
             .Include(n => n.Itens)
             .FirstOrDefaultAsync(n => n.Id == id);
 
@@ -76,26 +77,22 @@ public class NotaFiscalService
             );
         }
 
-        await GarantirItensDisponiveisParaImpressaoAsync(nota.Itens);
-
-        var reivindicada = await _context.NotasFiscais
-            .Where(n => n.Id == id && n.Status == StatusNotaFiscal.ABERTA)
-            .ExecuteUpdateAsync(n => n
-                .SetProperty(
-                    notaFiscal => notaFiscal.Status,
-                    StatusNotaFiscal.FECHADA
-                )
+        if (nota.Status != StatusNotaFiscal.ABERTA)
+        {
+            throw new InvalidOperationException(
+                "Somente notas com status ABERTA podem ser impressas."
             );
+        }
+
+        var reivindicada = await _context.Database.ExecuteSqlInterpolatedAsync(
+            $@"UPDATE ""NOTA_FISCAL""
+               SET ""STATUS"" = {"FECHADA"}
+               WHERE ""ID"" = {id}
+                 AND ""STATUS"" = {"ABERTA"}"
+        );
 
         if (reivindicada == 0)
         {
-            var atual = await BuscarPorIdAsync(id);
-
-            if (atual == null)
-            {
-                return null;
-            }
-
             throw new InvalidOperationException(
                 "Somente notas com status ABERTA podem ser impressas."
             );
@@ -119,45 +116,17 @@ public class NotaFiscalService
         {
             await CompensarAsync(baixados, _estoqueClient.EstornarBaixaAsync);
 
-            await _context.NotasFiscais
-                .Where(n => n.Id == id && n.Status == StatusNotaFiscal.FECHADA)
-                .ExecuteUpdateAsync(n => n
-                    .SetProperty(
-                        notaFiscal => notaFiscal.Status,
-                        StatusNotaFiscal.ABERTA
-                    )
-                );
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $@"UPDATE ""NOTA_FISCAL""
+                   SET ""STATUS"" = {"ABERTA"}
+                   WHERE ""ID"" = {id}
+                     AND ""STATUS"" = {"FECHADA"}"
+            );
 
             throw;
         }
 
-        _context.ChangeTracker.Clear();
-
         return await BuscarPorIdAsync(id);
-    }
-
-    private async Task GarantirItensDisponiveisParaImpressaoAsync(
-        List<ItemNotaFiscal> itens
-    )
-    {
-        foreach (var item in itens)
-        {
-            var produto = await _estoqueClient.ObterProdutoAsync(item.ProdutoId);
-
-            if (produto == null)
-            {
-                throw new InvalidOperationException(
-                    $"Produto {item.ProdutoId} não encontrado no estoque."
-                );
-            }
-
-            if (produto.Saldo < item.Quantidade || produto.Reservado < item.Quantidade)
-            {
-                throw new InvalidOperationException(
-                    $"Saldo insuficiente para o produto {item.ProdutoId}."
-                );
-            }
-        }
     }
 
     private async Task<NotaFiscal> PersistirNotaComNumeroAsync(

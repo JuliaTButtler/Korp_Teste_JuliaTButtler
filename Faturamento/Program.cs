@@ -29,7 +29,7 @@ builder.Services.AddHttpClient<EstoqueClient>(client =>
     );
 
     client.Timeout = TimeSpan.FromSeconds(
-        builder.Configuration.GetValue("EstoqueApi:TimeoutSeconds", 3)
+        builder.Configuration.GetValue("EstoqueApi:TimeoutSeconds", 15)
     );
 });
 
