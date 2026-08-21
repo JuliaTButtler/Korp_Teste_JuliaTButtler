@@ -4,6 +4,8 @@ Sistema de emissão de notas fiscais desenvolvido para o desafio técnico da Kor
 
 A solução é composta por um frontend em **Angular** e dois microsserviços em **ASP.NET Core (C#)**, com persistência em **Oracle**.
 
+Meu Linkedin: www.linkedin.com/in/júlia-t-buttler-2b842b367
+
 ---
 
 ## Tecnologias utilizadas
@@ -354,7 +356,3 @@ Documentação adicional do scaffold Angular: ver `frontend/README.md` (aponta d
 
 ---
 
-## Contato / entrega
-
-Repositório público no GitHub com o nome do desafio.  
-O detalhamento técnico exigido pelo enunciado está documentado neste README.
